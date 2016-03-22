@@ -21,7 +21,7 @@ public class Editor {
         frame = new EditorFrame();
 
         // Testing
-        File projectFolder = new File("C:\\Users\\Momo\\Desktop\\xxproject");
+        File projectFolder = new File("C:\\Users\\csa\\Desktop\\xxproject");
         String name = "My project";
 
         EditorProject project = EditorProject.create(name, projectFolder);
@@ -50,7 +50,7 @@ public class Editor {
         }
 
         currentProject = project;
-        frame.updateProjectView();
+        frame.setupProjectView();
         project.save();
     }
 

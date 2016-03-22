@@ -14,11 +14,15 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 public class EditorFrame extends JFrame implements KeyListener {
 
     private JTree projectView;
     ProjectViewTreeNode projectViewTop = new ProjectViewTreeNode("Project", NodeType.FOLDER);
+    ProjectViewTreeNode mapsNode = new ProjectViewTreeNode("Maps", NodeType.FOLDER);
+    HashMap<String, ProjectViewTreeNode> mapNodes = new HashMap<>();
     private boolean setup = true;
 
     public EditorFrame() throws HeadlessException {
@@ -56,33 +60,33 @@ public class EditorFrame extends JFrame implements KeyListener {
         node.removeAllChildren();
     }
 
-    public void updateProjectView() {
-        if (setup) {
-            setup = false;
-        } else {
-            clearNode(projectViewTop);
-            DefaultTreeModel model = (DefaultTreeModel) projectView.getModel();
-            model.nodeStructureChanged(projectViewTop);
+    public void addMap(EditorMap map) {
+        ProjectViewTreeNode mapN = new ProjectViewTreeNode(map.getName() + " [" + map.getObjects().length + " Objects]", NodeType.MAP);
+        mapN.add(new ProjectViewTreeNode("New object...", NodeType.NEW));
+        for (EditorObject editorObject : map.getObjects()) {
+            addObject(map, editorObject);
         }
-        repaint();
+        mapsNode.add(mapN);
+        mapNodes.put(map.getName(), mapN);
+        ((DefaultTreeModel) (projectView.getModel())).nodeStructureChanged(mapsNode);
+    }
+
+    public void addObject(EditorMap map, EditorObject object) {
+        ProjectViewTreeNode objN = new ProjectViewTreeNode(object.getName() + " [" + object.getPoints().length + " Points]", NodeType.OBJECT);
+        mapNodes.get(map.getName()).add(objN);
+    }
+
+    public void setupProjectView() {
         if (Editor.currentProject == null) {
             projectViewTop.add(new ProjectViewTreeNode("New project...", NodeType.NEW));
         } else {
             projectViewTop.setUserObject("Project [" + Editor.currentProject.getName() + "]");
-            ProjectViewTreeNode mapsNode = new ProjectViewTreeNode("Maps", NodeType.FOLDER);
+            mapsNode.add(new ProjectViewTreeNode("New map...", NodeType.NEW));
 
             for (EditorMap map : Editor.currentProject.getMaps()) {
-                ProjectViewTreeNode mapN = new ProjectViewTreeNode(map.getName() + " [" + map.getObjects().length + " Objects]", NodeType.MAP);
-
-                for (EditorObject object : map.getObjects()) {
-                    ProjectViewTreeNode objN = new ProjectViewTreeNode(object.getName() + " [" + object.getPoints().length + " Points]", NodeType.OBJECT);
-                    mapN.add(objN);
-                }
-                mapN.add(new ProjectViewTreeNode("New object...", NodeType.NEW));
-                mapsNode.add(mapN);
+                addMap(map);
             }
             projectViewTop.add(mapsNode);
-            mapsNode.add(new ProjectViewTreeNode("New map...", NodeType.NEW));
 
             ProjectViewTreeNode texturesNode = new ProjectViewTreeNode("Textures", NodeType.FOLDER);
             projectViewTop.add(texturesNode);
@@ -98,13 +102,7 @@ public class EditorFrame extends JFrame implements KeyListener {
 
     @Override
     public void keyPressed(KeyEvent e) {
-        if (e.isControlDown() && e.getKeyCode() == KeyEvent.VK_S) {
-            if (Editor.currentProject != null) {
-                Editor.currentProject.save();
-                updateProjectView();
-                System.out.println("Saved.");
-            }
-        }
+
     }
 
     @Override
@@ -158,7 +156,6 @@ public class EditorFrame extends JFrame implements KeyListener {
         @Override
         public void mouseClicked(MouseEvent e) {
             if (e.getButton() == MouseEvent.BUTTON3) {
-                System.out.println("Popup?");
                 return;
             }
             if (e.getClickCount() == 2) {
@@ -174,9 +171,10 @@ public class EditorFrame extends JFrame implements KeyListener {
                         System.out.println("Create new map window.");
                         EditorMap map = new EditorMap("Testmap", "test.xxm");
                         map.setObjects(new EditorObject[0]);
-                        Editor.currentProject.addMap(map);
-                        Editor.currentProject.save();
-                        updateProjectView();
+                        if (Editor.currentProject.addMap(map)) {
+                            Editor.currentProject.save();
+                            addMap(map);
+                        }
                     } else if (parent.equals("Textures")) {
                         System.out.println("Create new texture window.");
                     } else if (parentNode.getType() == NodeType.MAP) {

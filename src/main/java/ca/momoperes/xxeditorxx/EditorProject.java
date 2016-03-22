@@ -136,10 +136,15 @@ public class EditorProject {
         }
     }
 
-    public void addMap(EditorMap map) {
+    public boolean addMap(EditorMap map) {
         List<EditorMap> mapsL = new ArrayList<>();
         Collections.addAll(mapsL, maps);
+        for (EditorMap editorMap : mapsL) {
+            if (editorMap.getName().equals(map.getName()))
+                return false;
+        }
         mapsL.add(map);
         maps = mapsL.toArray(new EditorMap[mapsL.size()]);
+        return true;
     }
 }
