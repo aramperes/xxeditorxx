@@ -6,6 +6,7 @@ import ca.momoperes.xxeditorxx.EditorObject;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import javax.swing.tree.*;
 import java.awt.*;
 import java.awt.event.KeyEvent;
@@ -24,6 +25,8 @@ public class EditorFrame extends JFrame implements KeyListener {
     ProjectViewTreeNode mapsNode = new ProjectViewTreeNode("Maps", NodeType.FOLDER);
     HashMap<String, ProjectViewTreeNode> mapNodes = new HashMap<>();
     private boolean setup = true;
+    public EditorView currentView = null;
+    JTabbedPane tabs = new JTabbedPane();
 
     public EditorFrame() throws HeadlessException {
         try {
@@ -46,10 +49,17 @@ public class EditorFrame extends JFrame implements KeyListener {
         projectView.setLocation(0, 0);
         projectView.setVisible(true);
         projectView.addKeyListener(this);
+        projectView.setBorder(new EmptyBorder(10, 5, 0, 0));
 
         projectView.addMouseListener(new ProjectViewTreeDoubleClickListener());
+        projectView.setExpandsSelectedPaths(false);
         add(projectView);
-        projectView.expandPath(new TreePath(projectViewTop.getPath()));
+
+        tabs.setSize(getWidth() - 270, getHeight());
+        System.out.println(tabs.getWidth() + ", " + tabs.getHeight() + " / " + getWidth() + ", " + getHeight());
+        tabs.setLocation(250, 5);
+        tabs.setVisible(true);
+        add(tabs);
     }
 
     public void clearNode(ProjectViewTreeNode node) {
@@ -63,17 +73,18 @@ public class EditorFrame extends JFrame implements KeyListener {
     public void addMap(EditorMap map) {
         ProjectViewTreeNode mapN = new ProjectViewTreeNode(map.getName() + " [" + map.getObjects().length + " Objects]", NodeType.MAP);
         mapN.add(new ProjectViewTreeNode("New object...", NodeType.NEW));
+        mapNodes.put(map.getName(), mapN);
         for (EditorObject editorObject : map.getObjects()) {
             addObject(map, editorObject);
         }
         mapsNode.add(mapN);
-        mapNodes.put(map.getName(), mapN);
         ((DefaultTreeModel) (projectView.getModel())).nodeStructureChanged(mapsNode);
     }
 
     public void addObject(EditorMap map, EditorObject object) {
         ProjectViewTreeNode objN = new ProjectViewTreeNode(object.getName() + " [" + object.getPoints().length + " Points]", NodeType.OBJECT);
         mapNodes.get(map.getName()).add(objN);
+        mapNodes.get(map.getName()).setUserObject(map.getName() + " [" + map.getObjects().length + " Objects]");
     }
 
     public void setupProjectView() {
@@ -179,6 +190,26 @@ public class EditorFrame extends JFrame implements KeyListener {
                         System.out.println("Create new texture window.");
                     } else if (parentNode.getType() == NodeType.MAP) {
                         System.out.println("Create new object.");
+                    }
+                } else if (node.getType() == NodeType.MAP) {
+                    for (String mapName : mapNodes.keySet()) {
+                        if (mapNodes.get(mapName).equals(node)) {
+                            System.out.println("Selected map: " + mapName);
+
+                            for (int i = 0; i < tabs.getTabCount(); i++) {
+                                EditorView v = (EditorView) tabs.getComponentAt(i);
+                                if (v.getMap().getName().equals(mapName)) {
+                                    tabs.setSelectedIndex(i);
+                                    return;
+                                }
+                            }
+
+                            currentView = new EditorView(tabs.getWidth(), tabs.getHeight(), Editor.currentProject.getMap(mapName));
+                            currentView.setShown(true);
+
+                            tabs.addTab(mapName, currentView);
+                            tabs.setSelectedIndex(tabs.getTabCount() - 1);
+                        }
                     }
                 }
             }

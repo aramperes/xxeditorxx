@@ -1,6 +1,7 @@
 package ca.momoperes.xxeditorxx;
 
 import ca.momoperes.xxeditorxx.visual.EditorFrame;
+import ca.momoperes.xxeditorxx.visual.EditorViewThread;
 
 import java.io.File;
 import java.io.IOException;
@@ -21,7 +22,7 @@ public class Editor {
         frame = new EditorFrame();
 
         // Testing
-        File projectFolder = new File("C:\\Users\\csa\\Desktop\\xxproject");
+        File projectFolder = new File("C:\\Users\\Momo\\Desktop\\xxproject");
         String name = "My project";
 
         EditorProject project = EditorProject.create(name, projectFolder);
@@ -52,6 +53,7 @@ public class Editor {
         currentProject = project;
         frame.setupProjectView();
         project.save();
+        new EditorViewThread().start();
     }
 
     public static void main(String[] args) {

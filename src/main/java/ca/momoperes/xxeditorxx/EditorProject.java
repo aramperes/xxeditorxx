@@ -110,6 +110,14 @@ public class EditorProject {
         return maps;
     }
 
+    public EditorMap getMap(String name) {
+        for (EditorMap map : getMaps()) {
+            if (map.getName().equals(name))
+                return map;
+        }
+        return null;
+    }
+
     public EditorTexture[] getTextures() {
         return textures;
     }
